@@ -1,0 +1,121 @@
+<title>My Chatbot</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body {
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #f7f7f8;
+  }
+  h1 {
+    text-align: center;
+    font-size: 20px;
+  }
+  #messages {
+    background: white;
+    border-radius: 10px;
+    padding: 16px;
+    min-height: 400px;
+    max-height: 60vh;
+    overflow-y: auto;
+    margin-bottom: 12px;
+  }
+  .msg {
+    margin: 10px 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+  }
+  .user {
+    background: #e6f0ff;
+    margin-left: 20%;
+  }
+  .bot {
+    background: #eee;
+    margin-right: 20%;
+  }
+  #inputRow {
+    display: flex;
+    gap: 8px;
+  }
+  #question {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 15px;
+  }
+  #send {
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: none;
+    background: #2563eb;
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  #send:disabled {
+    opacity: 0.5;
+  }
+</style>
+
+<h1>My Chatbot</h1>
+<div id="messages"></div>
+<div id="inputRow">
+  <input id="question" type="text" placeholder="Ask a question..." />
+  <button id="send">Send</button>
+</div>
+
+<script>
+  const messagesEl = document.getElementById("messages");
+  const questionEl = document.getElementById("question");
+  const sendBtn = document.getElementById("send");
+
+  const history = [];
+
+  function addMessage(text, who) {
+    const div = document.createElement("div");
+    div.className = "msg " + who;
+    div.textContent = text;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  async function sendMessage() {
+    const text = questionEl.value.trim();
+    if (!text) return;
+
+    addMessage(text, "user");
+    history.push({ role: "user", content: text });
+    questionEl.value = "";
+    sendBtn.disabled = true;
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history }),
+      });
+      const data = await res.json();
+
+      if (data.reply) {
+        addMessage(data.reply, "bot");
+        history.push({ role: "assistant", content: data.reply });
+      } else {
+        addMessage("Something went wrong: " + (data.error || "unknown error"), "bot");
+      }
+    } catch (err) {
+      addMessage("Something went wrong reaching the server.", "bot");
+    } finally {
+      sendBtn.disabled = false;
+      questionEl.focus();
+    }
+  }
+
+  sendBtn.addEventListener("click", sendMessage);
+  questionEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") sendMessage();
+  });
+</script>
