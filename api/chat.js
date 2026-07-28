@@ -1,16 +1,29 @@
+$ cat "/Users/cameronstark/Hard Work Club Dropbox/Cameron Stark/My Mac (Camerons-MacBook-Air.local)/Desktop/Claude Research Assistant/chatbot-starter/api/chat.js"
+
 import Anthropic from "@anthropic-ai/sdk";
+import fs from "fs";
+import path from "path";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-// ============================================================
-// STEP: Replace the text below with your skill's instructions
-// and reference material. Everything between the backticks
-// (` `) is what gets sent to Claude before every question.
-// ============================================================
-const SKILL_INSTRUCTIONS = `
-PASTE_YOUR_SKILL_CONTENT_HERE
-`;
-// ============================================================
+// Reads every file inside the "skill-content" folder and combines them.
+// You never need to edit this file to add or change your reference
+// material — just add, remove, or edit files inside skill-content/.
+function loadSkillContent() {
+  const dir = path.join(process.cwd(), "skill-content");
+  if (!fs.existsSync(dir)) return "";
+
+  const files = fs
+    .readdirSync(dir)
+    .filter((name) => !name.startsWith("_"))
+    .sort();
+
+  return files
+    .map((name) => `--- ${name} ---\n${fs.readFileSync(path.join(dir, name), "utf-8")}`)
+    .join("\n\n");
+}
+
+const SKILL_CONTENT = loadSkillContent();
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -24,7 +37,13 @@ export default async function handler(req, res) {
     const response = await anthropic.messages.create({
       model: "claude-opus-4-8",
       max_tokens: 2048,
-      system: SKILL_INSTRUCTIONS,
+      system: [
+        {
+          type: "text",
+          text: SKILL_CONTENT,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
       messages,
     });
 
