@@ -1,5 +1,3 @@
-$ cat "/Users/cameronstark/Hard Work Club Dropbox/Cameron Stark/My Mac (Camerons-MacBook-Air.local)/Desktop/Claude Research Assistant/chatbot-starter/vercel.json"
-
 {
   "functions": {
     "api/chat.js": {
