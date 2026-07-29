@@ -1,3 +1,5 @@
+$ cat "/Users/cameronstark/Hard Work Club Dropbox/Cameron Stark/My Mac (Camerons-MacBook-Air.local)/Desktop/Claude Research Assistant/chatbot-starter/index.html"
+
 <title>My Chatbot</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
@@ -59,6 +61,13 @@
   #send:disabled {
     opacity: 0.5;
   }
+  #cornerImage {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    max-width: 80px;
+    height: auto;
+  }
 </style>
 
 <h1>My Chatbot</h1>
@@ -67,6 +76,8 @@
   <input id="question" type="text" placeholder="Ask a question..." />
   <button id="send">Send</button>
 </div>
+
+<img id="cornerImage" src="corner-image.png" alt="" />
 
 <script>
   const messagesEl = document.getElementById("messages");
