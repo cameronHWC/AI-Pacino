@@ -408,7 +408,7 @@
       const blob = await buildShareImage(messages);
       const file = new File([blob], "ai-pacino.png", { type: "image/png" });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: "AI Pacino", text: "I asked AI Pacino. " + SITE_URL });
+        await navigator.share({ files: [file], title: "AI Pacino", text: "I asked AI Pacino, so should you. " + SITE_URL });
       } else {
         // Desktop fallback: download the image
         const a = document.createElement("a");
