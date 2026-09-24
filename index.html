@@ -168,6 +168,28 @@
 
   const history = [];
 
+  // Shown when the site reaches the server but the call to Claude fails
+  const API_ERROR_LINES = [
+    "Whoa, whoa, whoa. Something just blew up in the back room. Gimme a second and ask me again.",
+    "Hold on. HOLD ON. My people dropped the ball. Ask me again.",
+    "You hear that? That's the sound of something breaking. Not my fault. Try me again.",
+    "I had the answer. I HAD it. And then it was gone. Ask me one more time.",
+    "Somebody in the back is getting yelled at right now. Give it a second and try again.",
+  ];
+
+  // Shown when the site can't reach the server at all
+  const NETWORK_ERROR_LINES = [
+    "I can't hear you, kid. The line went dead. Check your connection and try me again.",
+    "Hello? HELLO? You're breaking up on me. Check your connection and try again.",
+    "We got cut off. I don't like getting cut off. Check your connection and ask again.",
+    "You went quiet on me. I don't trust quiet. Check your signal and try again.",
+    "Nothing's getting through. Not a word. Check your connection and come back to me.",
+  ];
+
+  function pickLine(lines) {
+    return lines[Math.floor(Math.random() * lines.length)];
+  }
+
   function addMessage(text, who) {
     const div = document.createElement("div");
     div.className = "msg " + who;
@@ -191,16 +213,24 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: history }),
       });
-      const data = await res.json();
 
-      if (data.reply) {
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (e) {
+        // Server answered but not with JSON (e.g. a timeout page)
+      }
+
+      if (res.ok && data.reply) {
         addMessage(data.reply, "bot");
         history.push({ role: "assistant", content: data.reply });
       } else {
-        addMessage("Something went wrong: " + (data.error || "unknown error"), "bot");
+        console.error("API error:", res.status, data.error);
+        addMessage(pickLine(API_ERROR_LINES), "bot");
       }
     } catch (err) {
-      addMessage("Something went wrong reaching the server.", "bot");
+      console.error("Network error:", err);
+      addMessage(pickLine(NETWORK_ERROR_LINES), "bot");
     } finally {
       sendBtn.disabled = false;
       questionEl.focus();
