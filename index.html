@@ -170,7 +170,7 @@
   <img id="cornerImage" src="corner-image.png" alt="" />
 </div>
 <div id="inputRow">
-  <input id="question" type="text" placeholder="Whaddya wanna know..." />
+  <input id="question" type="text" placeholder="Whaddya wanna know..." maxlength="500" />
   <button id="send">Send</button>
   <button id="share" disabled title="Share this chat as an image">Share</button>
 </div>
@@ -206,6 +206,19 @@
     "Nothing's getting through. Not a word. Check your connection and come back to me.",
   ];
 
+  // Shown when a visitor sends too many messages too fast (firewall rate limit)
+  const SLOW_DOWN_LINES = [
+    "Easy. EASY. One question at a time. Take a breath and try me again in a minute.",
+    "You're talking too fast, kid. Slow down. Come back in a minute.",
+    "Whoa. You're rushing me. Nobody rushes me. Give it a minute.",
+  ];
+
+  // Shown when the monthly budget has been used up
+  const CLOSED_LINES = [
+    "That's it. We're closed for the month. Too many people wanted a piece of me. Come back on the 1st.",
+    "I gave everything I had this month. Everything. Come back on the 1st and we'll talk.",
+  ];
+
   function pickLine(lines) {
     return lines[Math.floor(Math.random() * lines.length)];
   }
@@ -232,7 +245,7 @@
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({ messages: history.slice(-10) }),
       });
 
       let data = {};
@@ -247,10 +260,18 @@
         history.push({ role: "assistant", content: data.reply });
       } else {
         console.error("API error:", res.status, data.error);
-        addMessage(pickLine(API_ERROR_LINES), "bot");
+        history.pop(); // drop the unanswered question so the conversation stays clean
+        if (data.code === "LIMIT_REACHED") {
+          addMessage(pickLine(CLOSED_LINES), "bot");
+        } else if (res.status === 429) {
+          addMessage(pickLine(SLOW_DOWN_LINES), "bot");
+        } else {
+          addMessage(pickLine(API_ERROR_LINES), "bot");
+        }
       }
     } catch (err) {
       console.error("Network error:", err);
+      history.pop();
       addMessage(pickLine(NETWORK_ERROR_LINES), "bot");
     } finally {
       sendBtn.disabled = false;
